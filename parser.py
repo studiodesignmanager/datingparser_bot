@@ -2,23 +2,38 @@ from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 from config import LOGIN, PASSWORD
 
+
 def get_online_girl():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # 1. LOGIN PAGE
-        page.goto("https://findbride.com/login", timeout=60000)
+        # 1. OPEN MAIN PAGE
+        page.goto("https://findbride.com", timeout=60000)
+        page.wait_for_timeout(3000)
 
-        # 2. FILL LOGIN FORM (селекторы могут отличаться, но обычно такие)
+        # 2. CLICK LOGIN BUTTON (через текст, т.к. селекторы могут меняться)
+        try:
+            page.click("text=Login")
+        except:
+            try:
+                page.click("text=Log in")
+            except:
+                page.click("text=Sign in")
+
+        page.wait_for_timeout(3000)
+
+        # 3. FILL LOGIN FORM (в модалке)
         page.fill('input[name="email"]', LOGIN)
         page.fill('input[name="password"]', PASSWORD)
 
+        # 4. SUBMIT
         page.click('button[type="submit"]')
 
-        page.wait_for_timeout(5000)
+        # 5. WAIT LOGIN COMPLETE
+        page.wait_for_timeout(7000)
 
-        # 3. GO TO MEMBERS PAGE
+        # 6. GO TO MEMBERS PAGE
         page.goto(
             "https://findbride.com/members?age%5Bfrom%5D=25&age%5Bto%5D=40",
             timeout=60000
@@ -30,7 +45,8 @@ def get_online_girl():
         profiles = soup.select(".member-item")
 
         for profile in profiles:
-            if "online" not in str(profile):
+            # online filter (гибкий)
+            if "online" not in str(profile).lower():
                 continue
 
             name = profile.select_one(".member-name")
