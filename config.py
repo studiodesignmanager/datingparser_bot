@@ -1,5 +1,5 @@
-TOKEN = '7841040731:AAEPoJTB0RhqiYKmBRC0e5LhttJ8s0XgzE0'
-CHANNEL = '@dating_service_channel'
+TOKEN = '8948621877:AAEULL2V05Y21ns2x2cAKQYjERUMDViGads'
+CHANNEL = '@interdatingservices'
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
 LOGIN_URL = "https://findbride.com/login"
