@@ -4,10 +4,12 @@ from config import TOKEN, CHANNEL, HEADERS
 from parser import get_online_girl
 from image_utils import crop_logo
 
+bot = Bot(token=TOKEN)
+
+
 def post_to_telegram(profile):
-    bot = Bot(token=TOKEN)
     response = requests.get(profile['img'], headers=HEADERS)
-    
+
     if response.status_code != 200:
         print("Ошибка загрузки изображения:", response.status_code)
         return
@@ -16,21 +18,29 @@ def post_to_telegram(profile):
 
     caption = (
         f"👩‍💼 {profile['name']}, {profile['age']}, {profile['country']}\n"
-        f"🔗 [Смотреть анкету]({profile['link']})"
+        f"🔗 Ссылка: {profile['link']}"
     )
 
     bot.send_photo(
         chat_id=CHANNEL,
         photo=img,
-        caption=caption,
-        parse_mode='Markdown'
+        caption=caption
     )
 
-if __name__ == "__main__":
+
+# 🔥 ЭТА ФУНКЦИЯ НУЖНА scheduler.py
+def run_post():
     girl = get_online_girl()
-    if girl:
-        post_to_telegram(girl)
-    else:
-        print("Нет подходящих анкет онлайн.")
+
+    if not girl:
+        print("❌ Нет подходящих анкет онлайн.")
+        return
+
+    post_to_telegram(girl)
+
+
+# локальный тест (ручной запуск)
+if __name__ == "__main__":
+    run_post()
 
 
