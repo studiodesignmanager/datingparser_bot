@@ -33,24 +33,33 @@ def get_online_girl():
                 try:
                     page.click("text=Log in")
                 except:
-                    page.click("text=Sign in")
+                    try:
+                        page.click("text=Sign in")
+                    except:
+                        print("❌ LOGIN BUTTON NOT FOUND")
 
-            page.wait_for_timeout(3000)
-
-            # -------------------
-            # 3. FILL FORM
-            # -------------------
-            print("✍️ FILL LOGIN FORM")
-
-            page.fill('input[name="email"]', LOGIN)
-            page.fill('input[name="password"]', PASSWORD)
-
-            page.click('button[type="submit"]')
-
-            page.wait_for_timeout(7000)
+            page.wait_for_timeout(5000)
 
             # -------------------
-            # 4. OPEN MEMBERS
+            # DEBUG: SHOW HTML AFTER LOGIN CLICK
+            # -------------------
+            print("📸 HTML AFTER LOGIN CLICK (FIRST 1500 CHARS)")
+            html = page.content()
+            print(html[:1500])
+
+            # -------------------
+            # 3. TRY LOGIN (TEMP DISABLED)
+            # -------------------
+            print("✍️ LOGIN STEP SKIPPED FOR DEBUG")
+
+            # page.fill('input[name="email"]', LOGIN)
+            # page.fill('input[name="password"]', PASSWORD)
+            # page.click('button[type="submit"]')
+
+            page.wait_for_timeout(5000)
+
+            # -------------------
+            # 4. OPEN MEMBERS PAGE
             # -------------------
             print("👥 OPEN MEMBERS PAGE")
 
