@@ -1,17 +1,16 @@
 import schedule
 import time
-import subprocess
+from bot import run_post  # импорт функции
 
 def job():
-    print("Запуск задачи поста в телеграм...")
-    subprocess.run(["python3", "/root/interbot/bot.py"])
+    print("Posting to Telegram...")
+    run_post()
 
-def main():
-    job()  # запуск сразу при старте для проверки
-    schedule.every().day.at("20:00").do(job)
-    while True:
-        schedule.run_pending()
-        time.sleep(30)
+schedule.every().day.at("20:00").do(job)
 
-if __name__ == "__main__":
-    main()
+# тест через 5 минут
+schedule.every(5).minutes.do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
