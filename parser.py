@@ -1,77 +1,36 @@
-import requests
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-from config import HEADERS, LOGIN_URL, LOGIN, PASSWORD
-
-
-BASE_URL = "https://findbride.com"
-
-
-def login(session):
-    payload = {
-        "email": LOGIN,
-        "password": PASSWORD
-    }
-
-    resp = session.post(LOGIN_URL, data=payload, headers=HEADERS)
-
-    # более реалистичная проверка логина
-    if resp.status_code != 200:
-        print("Login failed: bad status")
-        return False
-
-    text = resp.text.lower()
-
-    if "logout" in text or "sign out" in text:
-        return True
-
-    print("Login might have failed (no logout marker)")
-    return False
-
-
-def is_online(profile):
-    classes = profile.get("class", [])
-    return (
-        "online" in classes
-        or profile.select_one(".online") is not None
-        or "online" in profile.text.lower()
-    )
-
-
-def get_img(img_tag):
-    if not img_tag:
-        return None
-    return (
-        img_tag.get("data-src")
-        or img_tag.get("src")
-    )
-
+from config import LOGIN, PASSWORD
 
 def get_online_girl():
-    with requests.Session() as session:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-        # LOGIN
-        if not login(session):
-            return None
+        # 1. LOGIN PAGE
+        page.goto("https://findbride.com/login", timeout=60000)
 
-        url = f"{BASE_URL}/members?age[from]=25&age[to]=40"
-        resp = session.get(url, headers=HEADERS)
+        # 2. FILL LOGIN FORM (селекторы могут отличаться, но обычно такие)
+        page.fill('input[name="email"]', LOGIN)
+        page.fill('input[name="password"]', PASSWORD)
 
-        if resp.status_code != 200:
-            print("Failed to load members page:", resp.status_code)
-            return None
+        page.click('button[type="submit"]')
 
-        soup = BeautifulSoup(resp.text, "html.parser")
+        page.wait_for_timeout(5000)
+
+        # 3. GO TO MEMBERS PAGE
+        page.goto(
+            "https://findbride.com/members?age%5Bfrom%5D=25&age%5Bto%5D=40",
+            timeout=60000
+        )
+
+        html = page.content()
+        soup = BeautifulSoup(html, "html.parser")
+
         profiles = soup.select(".member-item")
 
-        if not profiles:
-            print("No profiles found (HTML structure may have changed)")
-            return None
-
-        # перебираем профили
         for profile in profiles:
-
-            if not is_online(profile):
+            if "online" not in str(profile):
                 continue
 
             name = profile.select_one(".member-name")
@@ -80,19 +39,15 @@ def get_online_girl():
             link_tag = profile.select_one("a")
             img_tag = profile.select_one("img")
 
-            if not all([name, age, country, link_tag]):
-                continue
+            if name and age and country and link_tag and img_tag:
+                browser.close()
+                return {
+                    "name": name.text.strip(),
+                    "age": age.text.strip(),
+                    "country": country.text.strip(),
+                    "link": "https://findbride.com" + link_tag["href"],
+                    "img": img_tag["src"]
+                }
 
-            img = get_img(img_tag)
-            if not img:
-                continue
-
-            return {
-                "name": name.text.strip(),
-                "age": age.text.strip(),
-                "country": country.text.strip(),
-                "link": urljoin(BASE_URL, link_tag["href"]),
-                "img": img
-            }
-
-    return None
+        browser.close()
+        return None
